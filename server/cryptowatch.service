@@ -1,0 +1,20 @@
+[Unit]
+Description=CryptoWatch Node.js Server
+After=network.target
+
+[Service]
+Type=simple
+User=diana
+WorkingDirectory=/var/www/CryptoWatchDemo
+ExecStart=/usr/bin/node /var/www/CryptoWatchDemo/server.js
+Restart=on-failure
+RestartSec=10
+StandardOutput=append:/var/log/cryptowatch/server.log
+StandardError=append:/var/log/cryptowatch/error.log
+
+# 环境变量
+Environment=NODE_ENV=production
+Environment=PORT=8080
+
+[Install]
+WantedBy=multi-user.target

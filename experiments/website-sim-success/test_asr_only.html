@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>阿里云语音识别(ASR)测试工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: 600px;
+            padding: 40px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .config-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+        }
+
+        .config-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group:last-child {
+            margin-bottom: 0;
+        }
+
+        label {
+            display: block;
+            color: #555;
+            margin-bottom: 5px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e8ed;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+            font-family: 'Courier New', monospace;
+        }
+
+        input[type="text"]:focus, input[type="password"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .record-section {
+            text-align: center;
+            margin: 30px 0;
+        }
+
+        .record-btn {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: none;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+        }
+
+        .record-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .record-btn:active {
+            transform: scale(0.95);
+        }
+
+        .record-btn.recording {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 4px 15px rgba(245, 87, 108, 0.4); }
+            50% { box-shadow: 0 4px 30px rgba(245, 87, 108, 0.8); }
+        }
+
+        .record-icon {
+            font-size: 40px;
+            margin-bottom: 5px;
+        }
+
+        .status-section {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #e1e8ed;
+        }
+
+        .status-item:last-child {
+            border-bottom: none;
+        }
+
+        .status-label {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .status-value {
+            color: #333;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .status-value.connected {
+            color: #28a745;
+        }
+
+        .status-value.disconnected {
+            color: #dc3545;
+        }
+
+        .result-section {
+            background: #fff;
+            border: 2px solid #e1e8ed;
+            border-radius: 10px;
+            padding: 20px;
+            min-height: 150px;
+        }
+
+        .result-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        .result-text {
+            color: #333;
+            font-size: 18px;
+            line-height: 1.6;
+            min-height: 60px;
+        }
+
+        .result-text.empty {
+            color: #999;
+            font-style: italic;
+        }
+
+        .log-section {
+            margin-top: 20px;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .log-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .log-item {
+            font-size: 12px;
+            color: #666;
+            padding: 5px 0;
+            border-bottom: 1px solid #e1e8ed;
+            font-family: 'Courier New', monospace;
+        }
+
+        .log-item:last-child {
+            border-bottom: none;
+        }
+
+        .log-item.error {
+            color: #dc3545;
+        }
+
+        .log-item.success {
+            color: #28a745;
+        }
+
+        .help-text {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            font-size: 13px;
+            color: #856404;
+        }
+
+        .help-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .help-list {
+            margin-left: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎤 语音识别测试</h1>
+        <p class="subtitle">阿里云智能语音交互 - ASR实时识别</p>
+
+        <!-- 配置区域 -->
+        <div class="config-section">
+            <div class="config-title">⚙️ API配置</div>
+            <div class="input-group">
+                <label for="token">AccessToken（24小时有效）:</label>
+                <input type="password" id="token" placeholder="在阿里云控制台获取">
+            </div>
+            <div class="input-group">
+                <label for="appkey">AppKey:</label>
+                <input type="text" id="appkey" value="">
+            </div>
+        </div>
+
+        <!-- 状态显示 -->
+        <div class="status-section">
+            <div class="status-item">
+                <span class="status-label">WebSocket状态:</span>
+                <span class="status-value disconnected" id="ws-status">未连接</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">录音状态:</span>
+                <span class="status-value" id="record-status">未录音</span>
+            </div>
+        </div>
+
+        <!-- 录音按钮 -->
+        <div class="record-section">
+            <button class="record-btn" id="record-btn">
+                <span class="record-icon">🎤</span>
+                <span>开始录音</span>
+            </button>
+        </div>
+
+        <!-- 识别结果 -->
+        <div class="result-section">
+            <div class="result-title">📝 识别结果</div>
+            <div class="result-text empty" id="result-text">等待语音输入...</div>
+        </div>
+
+        <!-- 日志区域 -->
+        <div class="log-section">
+            <div class="log-title">📋 运行日志</div>
+            <div id="log-container"></div>
+        </div>
+
+        <!-- 帮助信息 -->
+        <div class="help-text">
+            <div class="help-title">📌 使用说明:</div>
+            <ul class="help-list">
+                <li>在阿里云控制台的"智能语音交互 > 项目管理 > 测试"获取Token</li>
+                <li>填入Token后，点击"开始录音"按钮</li>
+                <li>允许浏览器访问麦克风权限</li>
+                <li>对着麦克风说话，识别结果会实时显示</li>
+                <li>再次点击按钮停止录音</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量
+        let websocket = null;
+        let mediaRecorder = null;
+        let audioContext = null;
+        let isRecording = false;
+        let currentTaskId = null; // 用于整个会话的task_id
+        let messageIdCounter = 0; // 消息计数器
+
+        // DOM元素
+        const recordBtn = document.getElementById('record-btn');
+        const wsStatus = document.getElementById('ws-status');
+        const recordStatus = document.getElementById('record-status');
+        const resultText = document.getElementById('result-text');
+        const logContainer = document.getElementById('log-container');
+
+        // 添加日志
+        function addLog(message, type = 'info') {
+            const logItem = document.createElement('div');
+            logItem.className = `log-item ${type}`;
+            const time = new Date().toLocaleTimeString();
+            logItem.textContent = `[${time}] ${message}`;
+            logContainer.insertBefore(logItem, logContainer.firstChild);
+            
+            // 限制日志数量
+            if (logContainer.children.length > 50) {
+                logContainer.removeChild(logContainer.lastChild);
+            }
+        }
+
+        // 更新WebSocket状态
+        function updateWSStatus(connected) {
+            wsStatus.textContent = connected ? '已连接' : '未连接';
+            wsStatus.className = `status-value ${connected ? 'connected' : 'disconnected'}`;
+        }
+
+        // 更新录音状态
+        function updateRecordStatus(recording) {
+            recordStatus.textContent = recording ? '录音中...' : '未录音';
+            isRecording = recording;
+            
+            if (recording) {
+                recordBtn.classList.add('recording');
+                recordBtn.querySelector('span:last-child').textContent = '停止录音';
+            } else {
+                recordBtn.classList.remove('recording');
+                recordBtn.querySelector('span:last-child').textContent = '开始录音';
+            }
+        }
+
+        // 连接WebSocket
+        function connectWebSocket() {
+            const token = document.getElementById('token').value.trim();
+            const appkey = document.getElementById('appkey').value.trim();
+
+            if (!token) {
+                alert('请先填入AccessToken！');
+                return false;
+            }
+
+            if (!appkey) {
+                alert('请先填入AppKey！');
+                return false;
+            }
+
+            try {
+                // 阿里云ASR WebSocket地址
+                const wsUrl = `wss://nls-gateway-cn-shanghai.aliyuncs.com/ws/v1?token=${token}`;
+                
+                // 生成本次会话的task_id（使用标准UUID）
+                currentTaskId = generateUUID();
+                messageIdCounter = 0;
+                
+                addLog('正在连接WebSocket...', 'info');
+                addLog('Task ID: ' + currentTaskId, 'info');
+                websocket = new WebSocket(wsUrl);
+
+                websocket.onopen = () => {
+                    addLog('WebSocket连接成功！', 'success');
+                    updateWSStatus(true);
+                    
+                    // 发送开始识别消息（每个消息使用独立的UUID）
+                    const startMessage = {
+                        header: {
+                            message_id: generateUUID(),
+                            task_id: currentTaskId,
+                            namespace: 'SpeechTranscriber',
+                            name: 'StartTranscription',
+                            appkey: appkey
+                        },
+                        payload: {
+                            format: 'pcm',
+                            sample_rate: 16000,
+                            enable_intermediate_result: true,
+                            enable_punctuation_prediction: true,
+                            enable_inverse_text_normalization: true
+                        }
+                    };
+                    
+                    addLog('发送消息: ' + JSON.stringify(startMessage.header), 'info');
+                    websocket.send(JSON.stringify(startMessage));
+                    addLog('已发送开始识别指令', 'info');
+                };
+
+                websocket.onmessage = (event) => {
+                    try {
+                        const response = JSON.parse(event.data);
+                        addLog(`收到消息: ${response.header?.name}`, 'info');
+                        
+                        if (response.header?.name === 'TranscriptionResultChanged') {
+                            // 中间结果
+                            const text = response.payload?.result;
+                            if (text) {
+                                resultText.textContent = text;
+                                resultText.className = 'result-text';
+                            }
+                        } else if (response.header?.name === 'TranscriptionCompleted') {
+                            // 最终结果
+                            const text = response.payload?.result;
+                            if (text) {
+                                resultText.textContent = text;
+                                resultText.className = 'result-text';
+                                addLog(`识别完成: ${text}`, 'success');
+                            }
+                        } else if (response.header?.name === 'TaskFailed') {
+                            addLog(`识别失败: ${response.header?.status_text}`, 'error');
+                        }
+                    } catch (e) {
+                        addLog(`解析消息失败: ${e.message}`, 'error');
+                    }
+                };
+
+                websocket.onerror = (error) => {
+                    addLog('WebSocket错误！', 'error');
+                    updateWSStatus(false);
+                };
+
+                websocket.onclose = () => {
+                    addLog('WebSocket已断开', 'info');
+                    updateWSStatus(false);
+                };
+
+                return true;
+            } catch (e) {
+                addLog(`连接失败: ${e.message}`, 'error');
+                return false;
+            }
+        }
+
+        // 开始录音
+        async function startRecording() {
+            try {
+                // 先连接WebSocket
+                if (!websocket || websocket.readyState !== WebSocket.OPEN) {
+                    if (!connectWebSocket()) {
+                        return;
+                    }
+                    // 等待连接建立
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+
+                // 请求麦克风权限
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    audio: {
+                        sampleRate: 16000,
+                        channelCount: 1
+                    } 
+                });
+                
+                addLog('已获取麦克风权限', 'success');
+
+                // 创建音频上下文
+                audioContext = new (window.AudioContext || window.webkitAudioContext)({
+                    sampleRate: 16000
+                });
+                const source = audioContext.createMediaStreamSource(stream);
+                const processor = audioContext.createScriptProcessor(4096, 1, 1);
+
+                source.connect(processor);
+                processor.connect(audioContext.destination);
+
+                // 处理音频数据
+                processor.onaudioprocess = (e) => {
+                    if (websocket && websocket.readyState === WebSocket.OPEN) {
+                        const inputData = e.inputBuffer.getChannelData(0);
+                        const pcmData = convertFloat32ToInt16(inputData);
+                        websocket.send(pcmData);
+                    }
+                };
+
+                mediaRecorder = { stream, processor, source };
+                updateRecordStatus(true);
+                addLog('开始录音...', 'info');
+
+            } catch (e) {
+                addLog(`录音失败: ${e.message}`, 'error');
+                alert('无法访问麦克风，请检查浏览器权限设置！');
+            }
+        }
+
+        // 停止录音
+        function stopRecording() {
+            if (mediaRecorder) {
+                mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                mediaRecorder.processor.disconnect();
+                mediaRecorder.source.disconnect();
+                mediaRecorder = null;
+                
+                if (audioContext) {
+                    audioContext.close();
+                    audioContext = null;
+                }
+            }
+
+            if (websocket && websocket.readyState === WebSocket.OPEN) {
+                // 发送停止识别消息（每个消息独立的UUID）
+                const stopMessage = {
+                    header: {
+                        message_id: generateUUID(),
+                        task_id: currentTaskId,
+                        namespace: 'SpeechTranscriber',
+                        name: 'StopTranscription',
+                        appkey: document.getElementById('appkey').value
+                    }
+                };
+                websocket.send(JSON.stringify(stopMessage));
+                addLog('已发送停止识别指令', 'info');
+            }
+
+            updateRecordStatus(false);
+            addLog('录音已停止', 'info');
+        }
+
+        // 录音按钮点击事件
+        recordBtn.addEventListener('click', () => {
+            if (isRecording) {
+                stopRecording();
+            } else {
+                startRecording();
+            }
+        });
+
+        // 工具函数：生成标准UUID v4（符合RFC 4122标准）
+        function generateUUID() {
+            // 使用crypto API生成更安全的UUID
+            if (crypto && crypto.randomUUID) {
+                return crypto.randomUUID();
+            }
+            // 降级方案：手动生成
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                const r = Math.random() * 16 | 0;
+                const v = c === 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
+
+        // 工具函数：Float32转Int16
+        function convertFloat32ToInt16(buffer) {
+            const l = buffer.length;
+            const buf = new Int16Array(l);
+            for (let i = 0; i < l; i++) {
+                buf[i] = Math.min(1, buffer[i]) * 0x7FFF;
+            }
+            return buf.buffer;
+        }
+
+        // 页面加载完成
+        async function loadConfigFromServer() {
+            try {
+                const resp = await fetch('/api/aliyun/config', { cache: 'no-store' });
+                if (!resp.ok) {
+                    throw new Error(`HTTP ${resp.status}`);
+                }
+
+                const cfg = await resp.json();
+                if (!cfg || !cfg.success) {
+                    throw new Error(cfg?.error || '返回内容异常');
+                }
+
+                if (cfg.token) {
+                    document.getElementById('token').value = cfg.token;
+                }
+                if (cfg.appKey) {
+                    document.getElementById('appkey').value = cfg.appKey;
+                }
+
+                addLog('已从本地服务器自动加载 Token/AppKey', 'success');
+            } catch (e) {
+                addLog(`自动加载配置失败（可忽略，手动填写即可）：${e.message}`, 'info');
+            }
+        }
+
+        addLog('页面加载完成，正在尝试自动加载配置...', 'info');
+        loadConfigFromServer();
+    </script>
+</body>
+</html>

@@ -1,0 +1,26 @@
+{
+	"easycom": {
+		"autoscan": true,
+		"custom": {
+			"^crypto-(.*)": "@/components/Crypto$1.vue",
+			"^message-(.*)": "@/components/Message$1.vue",
+			"^uni-(.*)": "@dcloudio/uni-ui/lib/uni-$1/uni-$1.vue"
+		}
+	},
+	"pages": [
+		{
+			"path": "pages/index/index",
+			"style": {
+				"navigationBarTitleText": "中本聪AI",
+				"enablePullDownRefresh": false,
+				"navigationStyle": "default"
+			}
+		}
+	],
+	"globalStyle": {
+		"navigationBarTextStyle": "white",
+		"navigationBarTitleText": "CryptoWatch",
+		"navigationBarBackgroundColor": "#1a1a2e",
+		"backgroundColor": "#16213e"
+	}
+}

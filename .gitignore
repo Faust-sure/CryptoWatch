@@ -1,0 +1,40 @@
+# Node
+node_modules/
+dist/
+build/
+coverage/
+
+# UniApp
+unpackage/
+*.apk
+*.aab
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Env
+.env
+.env.*
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-error.log*
+
+# Secrets (Aliyun)
+**/aliyun_config.json
+**/aliyun_config.*.json
+
+# Keystores
+keystore/
+*.keystore
+*.jks
+
+# Embedded repos (exclude)
+experiments/website-sim-success/gui-ji-print/
+experiments/website-sim-success/old/CryptoWatchDemo/

@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>中本聪智能体 - 手表版</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: 400px;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 5px;
+            font-size: 20px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 12px;
+        }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .status-item {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .status-label {
+            font-size: 11px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .status-value {
+            font-size: 12px;
+            font-weight: bold;
+            padding: 3px 8px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+
+        .status-success { background: #d4edda; color: #155724; }
+        .status-processing { background: #fff3cd; color: #856404; }
+        .status-error { background: #f8d7da; color: #721c24; }
+
+        .chat-container {
+            height: 250px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            background: #fafafa;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message-user {
+            text-align: right;
+        }
+
+        .message-content {
+            display: inline-block;
+            padding: 10px 15px;
+            border-radius: 12px;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+
+        .message-user .message-content {
+            background: #007bff;
+            color: white;
+        }
+
+        .message-assistant .message-content {
+            background: #e9ecef;
+            color: #333;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:active {
+            transform: scale(0.95);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .recording {
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .log-container {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 10px;
+            max-height: 100px;
+            overflow-y: auto;
+            font-size: 11px;
+            font-family: monospace;
+        }
+
+        .log-entry {
+            margin-bottom: 3px;
+            line-height: 1.4;
+        }
+
+        .log-info { color: #17a2b8; }
+        .log-success { color: #28a745; }
+        .log-error { color: #dc3545; }
+
+        .placeholder {
+            text-align: center;
+            color: #999;
+            padding: 50px 20px;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🪙 中本聪智能体</h1>
+        <p class="subtitle">比特币之父与您对话</p>
+
+        <div class="status-grid">
+            <div class="status-item">
+                <div class="status-label">录音</div>
+                <div class="status-value status-success" id="recordStatus">就绪</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">识别</div>
+                <div class="status-value" id="asrStatus">-</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">AI</div>
+                <div class="status-value" id="aiStatus">-</div>
+            </div>
+        </div>
+
+        <div class="chat-container" id="chatContainer">
+            <div class="placeholder">
+                点击"开始对话"按钮开始语音交互
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-primary" id="recordBtn" onclick="toggleRecording()">
+                <span id="recordIcon">🎤</span>
+                <span id="recordText">开始对话</span>
+            </button>
+            <button class="btn btn-secondary" onclick="clearChat()">
+                🗑️ 清空
+            </button>
+        </div>
+
+        <div class="log-container" id="logContainer"></div>
+    </div>
+
+    <script>
+        // 配置 - 自动检测服务器地址
+        const API_BASE = window.location.protocol + '//' + window.location.host;
+        
+        let appKey = '';
+        let token = '';
+        let isRecording = false;
+        let mediaRecorder = null;
+        let audioChunks = [];
+
+        // 页面加载时初始化
+        window.addEventListener('DOMContentLoaded', async () => {
+            await loadConfig();
+            log('✅ 系统就绪', 'success');
+        });
+
+        // 加载配置
+        async function loadConfig() {
+            try {
+                log('正在加载配置...', 'info');
+                const response = await fetch(`${API_BASE}/api/aliyun/config`);
+                const config = await response.json();
+                
+                appKey = config.appKey || config.appkey;
+                token = config.token;
+                
+                log('✅ 配置加载成功', 'success');
+            } catch (error) {
+                log(`❌ 配置加载失败: ${error.message}`, 'error');
+                alert('无法连接到服务器！');
+            }
+        }
+
+        // 切换录音状态
+        async function toggleRecording() {
+            if (isRecording) {
+                stopRecording();
+            } else {
+                await startRecording();
+            }
+        }
+
+        // 开始录音
+        async function startRecording() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    audio: { 
+                        echoCancellation: true,
+                        noiseSuppression: true
+                    } 
+                });
+
+                audioChunks = [];
+                mediaRecorder = new MediaRecorder(stream);
+
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        audioChunks.push(event.data);
+                    }
+                };
+
+                mediaRecorder.onstop = async () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    await processVoiceInput(audioBlob);
+                };
+
+                mediaRecorder.start();
+                isRecording = true;
+
+                document.getElementById('recordBtn').classList.add('recording');
+                document.getElementById('recordIcon').textContent = '⏹️';
+                document.getElementById('recordText').textContent = '停止录音';
+                updateStatus('recordStatus', '录音中', 'processing');
+                log('✅ 开始录音', 'success');
+
+            } catch (error) {
+                log(`❌ 麦克风权限被拒绝`, 'error');
+                alert('请允许访问麦克风！');
+            }
+        }
+
+        // 停止录音
+        function stopRecording() {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+                mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                isRecording = false;
+
+                document.getElementById('recordBtn').classList.remove('recording');
+                document.getElementById('recordIcon').textContent = '🎤';
+                document.getElementById('recordText').textContent = '开始对话';
+                updateStatus('recordStatus', '处理中', 'processing');
+            }
+        }
+
+        // 处理语音输入
+        async function processVoiceInput(audioBlob) {
+            try {
+                // ASR识别
+                const recognizedText = await performASR(audioBlob);
+                if (!recognizedText) {
+                    updateStatus('recordStatus', '就绪', 'success');
+                    return;
+                }
+
+                addMessage('user', recognizedText);
+
+                // AI对话
+                const aiResponse = await callCozeAI(recognizedText);
+                if (!aiResponse) {
+                    updateStatus('recordStatus', '就绪', 'success');
+                    return;
+                }
+
+                addMessage('assistant', aiResponse);
+
+                // TTS播放
+                await playTTS(aiResponse);
+
+                updateStatus('recordStatus', '就绪', 'success');
+                log('✅ 对话完成', 'success');
+
+            } catch (error) {
+                log(`❌ 处理失败: ${error.message}`, 'error');
+                updateStatus('recordStatus', '错误', 'error');
+            }
+        }
+
+        // ASR识别
+        async function performASR(audioBlob) {
+            try {
+                updateStatus('asrStatus', '识别中', 'processing');
+                log('🔍 ASR识别...', 'info');
+
+                const wavBlob = await convertToWav(audioBlob);
+                const url = `${API_BASE}/api/aliyun/asr?appkey=${encodeURIComponent(appKey)}&token=${encodeURIComponent(token)}`;
+
+                const response = await fetch(url, {
+                    method: 'POST',
+                    body: wavBlob
+                });
+
+                const result = await response.json();
+                
+                if (result.status === 20000000 && result.result) {
+                    log(`✅ 识别: ${result.result}`, 'success');
+                    updateStatus('asrStatus', '成功', 'success');
+                    return result.result;
+                } else {
+                    throw new Error('识别失败');
+                }
+
+            } catch (error) {
+                log(`❌ ASR失败: ${error.message}`, 'error');
+                updateStatus('asrStatus', '失败', 'error');
+                return null;
+            }
+        }
+
+        // AI对话
+        async function callCozeAI(userMessage) {
+            try {
+                updateStatus('aiStatus', '思考中', 'processing');
+                log('🤖 AI思考...', 'info');
+
+                const response = await fetch(`${API_BASE}/api/coze`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        content: {
+                            query: {
+                                prompt: [
+                                    {
+                                        type: "text",
+                                        content: {
+                                            text: userMessage
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        type: "query",
+                        session_id: "XoCiKxrz1oX_NSr1z0xQq",
+                        project_id: 7594865794518106153
+                    })
+                });
+
+                if (!response.ok) throw new Error('AI请求失败');
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let aiText = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    const chunk = decoder.decode(value, { stream: true });
+                    const lines = chunk.split('\n');
+
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            try {
+                                const data = JSON.parse(line.slice(6));
+                                if (data.type === 'answer' && data.content) {
+                                    aiText += data.content;
+                                }
+                            } catch (e) {}
+                        }
+                    }
+                }
+
+                if (aiText) {
+                    log(`✅ AI回复完成`, 'success');
+                    updateStatus('aiStatus', '成功', 'success');
+                    return aiText;
+                } else {
+                    throw new Error('无AI响应');
+                }
+
+            } catch (error) {
+                log(`❌ AI失败: ${error.message}`, 'error');
+                updateStatus('aiStatus', '失败', 'error');
+                return null;
+            }
+        }
+
+        // TTS播放
+        async function playTTS(text) {
+            try {
+                log('🔊 TTS合成...', 'info');
+
+                const url = `${API_BASE}/api/aliyun/tts?` + new URLSearchParams({
+                    appkey: appKey,
+                    token: token,
+                    text: text,
+                    voice: 'aixia',
+                    format: 'mp3'
+                });
+
+                const audio = new Audio(url);
+                await audio.play();
+
+                log('✅ TTS播放完成', 'success');
+
+            } catch (error) {
+                log(`❌ TTS失败`, 'error');
+            }
+        }
+
+        // 音频转WAV
+        async function convertToWav(blob) {
+            const arrayBuffer = await blob.arrayBuffer();
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+            const wavBuffer = audioBufferToWav(audioBuffer);
+            return new Blob([wavBuffer], { type: 'audio/wav' });
+        }
+
+        function audioBufferToWav(buffer) {
+            const numberOfChannels = 1;
+            const sampleRate = 16000;
+            const format = 1;
+            const bitDepth = 16;
+            
+            const samples = buffer.getChannelData(0);
+            const newSamples = new Float32Array(Math.floor(samples.length * sampleRate / buffer.sampleRate));
+            
+            for (let i = 0; i < newSamples.length; i++) {
+                const index = Math.floor(i * buffer.sampleRate / sampleRate);
+                newSamples[i] = samples[index];
+            }
+            
+            const dataLength = newSamples.length * (bitDepth / 8);
+            const bufferLength = 44 + dataLength;
+            const arrayBuffer = new ArrayBuffer(bufferLength);
+            const view = new DataView(arrayBuffer);
+            
+            const writeString = (offset, string) => {
+                for (let i = 0; i < string.length; i++) {
+                    view.setUint8(offset + i, string.charCodeAt(i));
+                }
+            };
+            
+            writeString(0, 'RIFF');
+            view.setUint32(4, 36 + dataLength, true);
+            writeString(8, 'WAVE');
+            writeString(12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, format, true);
+            view.setUint16(22, numberOfChannels, true);
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * numberOfChannels * (bitDepth / 8), true);
+            view.setUint16(32, numberOfChannels * (bitDepth / 8), true);
+            view.setUint16(34, bitDepth, true);
+            writeString(36, 'data');
+            view.setUint32(40, dataLength, true);
+            
+            let offset = 44;
+            for (let i = 0; i < newSamples.length; i++) {
+                const sample = Math.max(-1, Math.min(1, newSamples[i]));
+                view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
+                offset += 2;
+            }
+            
+            return arrayBuffer;
+        }
+
+        // UI辅助函数
+        function addMessage(role, content) {
+            const chatContainer = document.getElementById('chatContainer');
+            const placeholder = chatContainer.querySelector('.placeholder');
+            if (placeholder) placeholder.remove();
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message message-${role}`;
+            messageDiv.innerHTML = `<div class="message-content">${content}</div>`;
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function updateStatus(elementId, text, type) {
+            const element = document.getElementById(elementId);
+            element.textContent = text;
+            element.className = 'status-value';
+            if (type) element.classList.add(`status-${type}`);
+        }
+
+        function log(message, type = 'info') {
+            const logContainer = document.getElementById('logContainer');
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logContainer.appendChild(entry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+            
+            // 限制日志数量
+            while (logContainer.children.length > 20) {
+                logContainer.removeChild(logContainer.firstChild);
+            }
+        }
+
+        function clearChat() {
+            const chatContainer = document.getElementById('chatContainer');
+            chatContainer.innerHTML = '<div class="placeholder">点击"开始对话"按钮开始语音交互</div>';
+            log('已清空对话', 'info');
+        }
+    </script>
+</body>
+</html>

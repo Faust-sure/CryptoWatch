@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能手表语音对话完整测试</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: 700px;
+            padding: 40px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .badge {
+            display: inline-block;
+            background: #28a745;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 8px;
+        }
+
+        .badge.auto {
+            background: #007bff;
+        }
+
+        .config-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+        }
+
+        .config-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        .chat-container {
+            background: #fff;
+            border: 2px solid #e1e8ed;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 25px;
+            min-height: 300px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .message.user {
+            flex-direction: row-reverse;
+        }
+
+        .message-bubble {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            word-wrap: break-word;
+            position: relative;
+        }
+
+        .message.user .message-bubble {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin-left: auto;
+        }
+
+        .message.assistant .message-bubble {
+            background: #e9ecef;
+            color: #333;
+        }
+
+        .message-label {
+            font-size: 11px;
+            color: #999;
+            margin-bottom: 4px;
+            padding: 0 8px;
+        }
+
+        .message.user .message-label {
+            text-align: right;
+        }
+
+        .control-panel {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 15px 25px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .btn-record {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .btn-record.recording {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .btn-clear {
+            background: #6c757d;
+            color: white;
+            flex: 0.5;
+        }
+
+        .status-panel {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+        }
+
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .status-item:last-child {
+            border-bottom: none;
+        }
+
+        .status-label {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .status-value {
+            color: #333;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .status-value.success {
+            color: #28a745;
+        }
+
+        .status-value.error {
+            color: #dc3545;
+        }
+
+        .status-value.processing {
+            color: #007bff;
+        }
+
+        .logs {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 2px 0;
+        }
+
+        .log-entry.info {
+            color: #4fc3f7;
+        }
+
+        .log-entry.success {
+            color: #66bb6a;
+        }
+
+        .log-entry.error {
+            color: #ef5350;
+        }
+
+        .log-entry.warning {
+            color: #ffb74d;
+        }
+
+        .collapse-header {
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            background: #e9ecef;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .collapse-header:hover {
+            background: #dee2e6;
+        }
+
+        .collapse-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .collapse-content.show {
+            max-height: 500px;
+        }
+
+        .arrow {
+            transition: transform 0.3s;
+        }
+
+        .arrow.down {
+            transform: rotate(90deg);
+        }
+
+        .audio-visualizer {
+            width: 100%;
+            height: 60px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin: 15px 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .audio-bars {
+            display: flex;
+            align-items: flex-end;
+            height: 100%;
+            padding: 10px;
+            gap: 3px;
+        }
+
+        .audio-bar {
+            flex: 1;
+            background: linear-gradient(to top, #667eea, #764ba2);
+            border-radius: 2px;
+            transition: height 0.1s;
+            min-height: 2px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎙️ 智能手表语音对话</h1>
+        <p class="subtitle">录音 → ASR识别 → 扣子AI → TTS播放 <span class="badge auto">自动加载配置</span></p>
+
+        <!-- 对话显示区 -->
+        <div class="chat-container" id="chatContainer">
+            <div style="text-align: center; color: #999; padding: 50px 20px;">
+                <div style="font-size: 48px; margin-bottom: 10px;">💬</div>
+                <div>点击"开始对话"按钮开始语音交互</div>
+            </div>
+        </div>
+
+        <!-- 音频可视化 -->
+        <div class="audio-visualizer" id="visualizer" style="display: none;">
+            <div class="audio-bars" id="audioBars"></div>
+        </div>
+
+        <!-- 控制面板 -->
+        <div class="control-panel">
+            <button class="btn btn-record" id="recordBtn">
+                <span id="recordIcon">🎤</span>
+                <span id="recordText">开始对话</span>
+            </button>
+            <button class="btn btn-clear" id="clearBtn">🗑️ 清空</button>
+        </div>
+
+        <!-- 状态面板 -->
+        <div class="status-panel">
+            <div class="status-item">
+                <span class="status-label">录音状态:</span>
+                <span class="status-value" id="recordStatus">就绪</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">ASR识别:</span>
+                <span class="status-value" id="asrStatus">-</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">AI回复:</span>
+                <span class="status-value" id="aiStatus">-</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">TTS播放:</span>
+                <span class="status-value" id="ttsStatus">-</span>
+            </div>
+        </div>
+
+        <!-- 调试日志（可折叠） -->
+        <div class="collapse-header" id="logToggle">
+            <span>📋 调试日志</span>
+            <span class="arrow">▶</span>
+        </div>
+        <div class="collapse-content" id="logContent">
+            <div class="logs" id="logs"></div>
+        </div>
+
+        <!-- 配置信息（可折叠） -->
+        <div class="collapse-header" id="configToggle">
+            <span>⚙️ 配置信息</span>
+            <span class="arrow">▶</span>
+        </div>
+        <div class="collapse-content" id="configContent">
+            <div class="config-section">
+                <div class="config-title">阿里云配置</div>
+                <div style="font-size: 12px; color: #666; margin-top: 10px;">
+                    <div>AppKey: <span id="displayAppKey">加载中...</span></div>
+                    <div>Token: <span id="displayToken">加载中...</span></div>
+                    <div>服务器: <span id="displayServer">http://localhost:8080</span></div>
+                </div>
+            </div>
+            <div class="config-section">
+                <div class="config-title">扣子智能体</div>
+                <div style="font-size: 12px; color: #666; margin-top: 10px;">
+                    <div>URL: <span id="displayCoze">https://2hft83qmjs.coze.site/stream_run</span></div>
+                    <div>Token: baa8a38262754e21ad762d17627e2e16</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== 全局变量 ====================
+        let appKey = '';
+        let token = '';
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let isRecording = false;
+        let audioContext = null;
+        let analyser = null;
+        let animationId = null;
+
+        const chatContainer = document.getElementById('chatContainer');
+        const recordBtn = document.getElementById('recordBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const logsDiv = document.getElementById('logs');
+        const visualizer = document.getElementById('visualizer');
+        const audioBars = document.getElementById('audioBars');
+
+        // 扣子AI配置
+        const COZE_CONFIG = {
+            url: '/api/coze',  // 使用本地代理，避免CORS问题
+            projectId: '7594865794518106153',
+            conversationId: generateConversationId()
+        };
+
+        // ==================== 初始化 ====================
+        window.addEventListener('load', async () => {
+            log('页面加载完成', 'info');
+            await loadConfig();
+            initEventListeners();
+            initAudioVisualizer();
+            checkBrowserSupport();
+        });
+
+        // ==================== 配置加载 ====================
+        async function loadConfig() {
+            try {
+                log('正在从服务器获取配置...', 'info');
+                const response = await fetch('/api/aliyun/config');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const config = await response.json();
+                
+                // 注意：服务器返回的是 appKey（大写K），不是 appkey（小写k）
+                appKey = config.appKey || config.appkey;
+                token = config.token;
+
+                if (!appKey || !token) {
+                    throw new Error('配置中缺少必要字段');
+                }
+
+                document.getElementById('displayAppKey').textContent = appKey;
+                document.getElementById('displayToken').textContent = token.substring(0, 20) + '...';
+
+                log('✅ 配置加载成功', 'success');
+                log(`AppKey: ${appKey}`, 'info');
+                log(`Token: ${token.substring(0, 20)}...`, 'info');
+                updateStatus('recordStatus', '就绪', 'success');
+            } catch (error) {
+                log(`❌ 配置加载失败: ${error.message}`, 'error');
+                updateStatus('recordStatus', '配置失败', 'error');
+                alert('无法加载配置，请确保服务器正在运行！');
+            }
+        }
+
+        // ==================== 事件监听 ====================
+        function initEventListeners() {
+            recordBtn.addEventListener('click', toggleRecording);
+            clearBtn.addEventListener('click', clearChat);
+            
+            // 折叠面板
+            document.getElementById('logToggle').addEventListener('click', function() {
+                toggleCollapse('logContent', this.querySelector('.arrow'));
+            });
+            document.getElementById('configToggle').addEventListener('click', function() {
+                toggleCollapse('configContent', this.querySelector('.arrow'));
+            });
+        }
+
+        // ==================== 录音控制 ====================
+        async function toggleRecording() {
+            if (isRecording) {
+                stopRecording();
+            } else {
+                await startRecording();
+            }
+        }
+
+        async function startRecording() {
+            try {
+                log('🎤 请求麦克风权限...', 'info');
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    audio: {
+                        sampleRate: 16000,
+                        channelCount: 1,
+                        echoCancellation: true,
+                        noiseSuppression: true
+                    } 
+                });
+
+                audioChunks = [];
+                mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        audioChunks.push(event.data);
+                    }
+                };
+
+                mediaRecorder.onstop = async () => {
+                    log('🎤 录音结束，准备处理...', 'info');
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    await processVoiceInput(audioBlob);
+                };
+
+                mediaRecorder.start();
+                isRecording = true;
+
+                // 启动音频可视化
+                setupAudioVisualization(stream);
+                visualizer.style.display = 'block';
+
+                // 更新UI
+                recordBtn.classList.add('recording');
+                document.getElementById('recordIcon').textContent = '⏹️';
+                document.getElementById('recordText').textContent = '停止录音';
+                updateStatus('recordStatus', '录音中...', 'processing');
+                log('✅ 录音开始', 'success');
+
+            } catch (error) {
+                log(`❌ 麦克风权限被拒绝: ${error.message}`, 'error');
+                alert('请允许浏览器访问麦克风！');
+            }
+        }
+
+        function stopRecording() {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+                mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                isRecording = false;
+
+                // 停止音频可视化
+                if (animationId) {
+                    cancelAnimationFrame(animationId);
+                }
+                visualizer.style.display = 'none';
+
+                // 更新UI
+                recordBtn.classList.remove('recording');
+                document.getElementById('recordIcon').textContent = '🎤';
+                document.getElementById('recordText').textContent = '开始对话';
+                updateStatus('recordStatus', '处理中...', 'processing');
+            }
+        }
+
+        // ==================== 音频可视化 ====================
+        function initAudioVisualizer() {
+            // 创建20个音频条
+            for (let i = 0; i < 20; i++) {
+                const bar = document.createElement('div');
+                bar.className = 'audio-bar';
+                audioBars.appendChild(bar);
+            }
+        }
+
+        function setupAudioVisualization(stream) {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            analyser = audioContext.createAnalyser();
+            const source = audioContext.createMediaStreamSource(stream);
+            source.connect(analyser);
+            analyser.fftSize = 64;
+
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+
+            function draw() {
+                animationId = requestAnimationFrame(draw);
+                analyser.getByteFrequencyData(dataArray);
+
+                const bars = audioBars.querySelectorAll('.audio-bar');
+                bars.forEach((bar, index) => {
+                    const value = dataArray[index] || 0;
+                    const height = (value / 255) * 100;
+                    bar.style.height = Math.max(5, height) + '%';
+                });
+            }
+
+            draw();
+        }
+
+        // ==================== 语音处理流程 ====================
+        async function processVoiceInput(audioBlob) {
+            try {
+                // 步骤1: ASR识别
+                const recognizedText = await performASR(audioBlob);
+                if (!recognizedText) {
+                    updateStatus('recordStatus', '就绪', 'success');
+                    return;
+                }
+
+                // 显示用户消息
+                addMessage('user', recognizedText);
+
+                // 步骤2: 调用扣子AI
+                const aiResponse = await callCozeAI(recognizedText);
+                if (!aiResponse) {
+                    updateStatus('recordStatus', '就绪', 'success');
+                    return;
+                }
+
+                // 显示AI回复
+                addMessage('assistant', aiResponse);
+
+                // 步骤3: TTS播放
+                await playTTS(aiResponse);
+
+                updateStatus('recordStatus', '就绪', 'success');
+                log('✅ 对话流程完成', 'success');
+
+            } catch (error) {
+                log(`❌ 处理失败: ${error.message}`, 'error');
+                updateStatus('recordStatus', '错误', 'error');
+            }
+        }
+
+        // ==================== ASR识别 ====================
+        async function performASR(audioBlob) {
+            try {
+                updateStatus('asrStatus', '识别中...', 'processing');
+                log('🔍 开始ASR识别...', 'info');
+
+                // 转换为WAV格式
+                const wavBlob = await convertToWav(audioBlob);
+                log(`📦 音频大小: ${(wavBlob.size / 1024).toFixed(2)} KB`, 'info');
+
+                // 通过URL参数传递token和appkey，body直接传音频数据（使用相对路径）
+                const url = `/api/aliyun/asr?appkey=${encodeURIComponent(appKey)}&token=${encodeURIComponent(token)}`;
+
+                const response = await fetch(url, {
+                    method: 'POST',
+                    body: wavBlob
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const result = await response.json();
+                
+                if (result.status === 20000000 && result.result) {
+                    log(`✅ ASR识别成功: ${result.result}`, 'success');
+                    updateStatus('asrStatus', '成功', 'success');
+                    return result.result;
+                } else {
+                    throw new Error(result.message || '识别失败');
+                }
+
+            } catch (error) {
+                log(`❌ ASR识别失败: ${error.message}`, 'error');
+                updateStatus('asrStatus', '失败', 'error');
+                return null;
+            }
+        }
+
+        // ==================== 扣子AI对话 ====================
+        async function callCozeAI(userMessage) {
+            try {
+                updateStatus('aiStatus', '思考中...', 'processing');
+                log('🤖 正在调用扣子AI...', 'info');
+
+                const response = await fetch(COZE_CONFIG.url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        content: {
+                            query: {
+                                prompt: [
+                                    {
+                                        type: "text",
+                                        content: {
+                                            text: userMessage
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        type: "query",
+                        session_id: COZE_CONFIG.conversationId,
+                        project_id: COZE_CONFIG.projectId
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                // 扣子接口返回的是 Server-Sent Events (SSE) 格式，需要解析
+                const text = await response.text();
+                log('收到AI原始响应', 'info');
+
+                // 解析 SSE 格式：提取所有 "answer" 字段并拼接
+                const lines = text.split('\n');
+                let fullAnswer = '';
+                
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        try {
+                            const jsonStr = line.substring(6); // 去掉 "data: " 前缀
+                            const data = JSON.parse(jsonStr);
+                            
+                            // 提取 type 为 "answer" 的内容
+                            if (data.type === 'answer' && data.content?.answer) {
+                                fullAnswer += data.content.answer;
+                            }
+                        } catch (e) {
+                            // 跳过无法解析的行
+                        }
+                    }
+                }
+
+                if (fullAnswer) {
+                    log(`✅ AI回复: ${fullAnswer.substring(0, 50)}...`, 'success');
+                    updateStatus('aiStatus', '成功', 'success');
+                    return fullAnswer;
+                }
+
+                throw new Error('未获取到AI回复内容');
+
+            } catch (error) {
+                log(`❌ AI调用失败: ${error.message}`, 'error');
+                updateStatus('aiStatus', '失败', 'error');
+                return null;
+            }
+        }
+
+        // ==================== TTS播放 ====================
+        async function playTTS(text) {
+            try {
+                updateStatus('ttsStatus', '合成中...', 'processing');
+                log('🔊 开始TTS合成...', 'info');
+
+                const url = `/api/aliyun/tts?` + new URLSearchParams({
+                    appkey: appKey,
+                    token: token,
+                    text: text,
+                    voice: 'aixia',
+                    format: 'mp3',
+                    sample_rate: 16000,
+                    volume: 50,
+                    speech_rate: 0,
+                    pitch_rate: 0
+                });
+
+                const audio = new Audio(url);
+                
+                audio.oncanplaythrough = () => {
+                    log('✅ TTS合成成功，开始播放', 'success');
+                    updateStatus('ttsStatus', '播放中...', 'processing');
+                };
+
+                audio.onended = () => {
+                    log('✅ TTS播放完成', 'success');
+                    updateStatus('ttsStatus', '完成', 'success');
+                };
+
+                audio.onerror = (e) => {
+                    throw new Error('播放失败');
+                };
+
+                await audio.play();
+
+            } catch (error) {
+                log(`❌ TTS播放失败: ${error.message}`, 'error');
+                updateStatus('ttsStatus', '失败', 'error');
+            }
+        }
+
+        // ==================== 音频转换 ====================
+        async function convertToWav(blob) {
+            const arrayBuffer = await blob.arrayBuffer();
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+
+            const wavBuffer = audioBufferToWav(audioBuffer);
+            return new Blob([wavBuffer], { type: 'audio/wav' });
+        }
+
+        function audioBufferToWav(buffer) {
+            const numberOfChannels = 1;
+            const sampleRate = 16000;
+            const format = 1; // PCM
+            const bitDepth = 16;
+
+            const samples = buffer.getChannelData(0);
+            const newSamples = new Float32Array(Math.floor(samples.length * sampleRate / buffer.sampleRate));
+            
+            for (let i = 0; i < newSamples.length; i++) {
+                const index = Math.floor(i * buffer.sampleRate / sampleRate);
+                newSamples[i] = samples[index];
+            }
+
+            const dataLength = newSamples.length * (bitDepth / 8);
+            const bufferLength = 44 + dataLength;
+            const arrayBuffer = new ArrayBuffer(bufferLength);
+            const view = new DataView(arrayBuffer);
+
+            writeString(view, 0, 'RIFF');
+            view.setUint32(4, 36 + dataLength, true);
+            writeString(view, 8, 'WAVE');
+            writeString(view, 12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, format, true);
+            view.setUint16(22, numberOfChannels, true);
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * numberOfChannels * (bitDepth / 8), true);
+            view.setUint16(32, numberOfChannels * (bitDepth / 8), true);
+            view.setUint16(34, bitDepth, true);
+            writeString(view, 36, 'data');
+            view.setUint32(40, dataLength, true);
+
+            let offset = 44;
+            for (let i = 0; i < newSamples.length; i++) {
+                const sample = Math.max(-1, Math.min(1, newSamples[i]));
+                view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
+                offset += 2;
+            }
+
+            return arrayBuffer;
+        }
+
+        function writeString(view, offset, string) {
+            for (let i = 0; i < string.length; i++) {
+                view.setUint8(offset + i, string.charCodeAt(i));
+            }
+        }
+
+        // ==================== UI更新 ====================
+        function addMessage(role, content) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${role}`;
+
+            const label = document.createElement('div');
+            label.className = 'message-label';
+            label.textContent = role === 'user' ? '👤 你' : '🤖 智能助手';
+
+            const bubble = document.createElement('div');
+            bubble.className = 'message-bubble';
+            bubble.textContent = content;
+
+            messageDiv.appendChild(label);
+            messageDiv.appendChild(bubble);
+
+            // 首次添加消息时清空提示
+            if (chatContainer.children.length === 1 && 
+                chatContainer.children[0].textContent.includes('开始语音交互')) {
+                chatContainer.innerHTML = '';
+            }
+
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function clearChat() {
+            chatContainer.innerHTML = `
+                <div style="text-align: center; color: #999; padding: 50px 20px;">
+                    <div style="font-size: 48px; margin-bottom: 10px;">💬</div>
+                    <div>点击"开始对话"按钮开始语音交互</div>
+                </div>
+            `;
+            log('🗑️ 对话已清空', 'info');
+            
+            // 重置状态
+            updateStatus('asrStatus', '-');
+            updateStatus('aiStatus', '-');
+            updateStatus('ttsStatus', '-');
+        }
+
+        function updateStatus(elementId, text, statusClass = '') {
+            const element = document.getElementById(elementId);
+            element.textContent = text;
+            element.className = 'status-value';
+            if (statusClass) {
+                element.classList.add(statusClass);
+            }
+        }
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString('zh-CN', { hour12: false });
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry ${type}`;
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            logsDiv.appendChild(logEntry);
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+        }
+
+        function toggleCollapse(contentId, arrow) {
+            const content = document.getElementById(contentId);
+            content.classList.toggle('show');
+            arrow.classList.toggle('down');
+        }
+
+        // ==================== 工具函数 ====================
+        function generateConversationId() {
+            return 'watch_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        }
+
+        function checkBrowserSupport() {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                alert('您的浏览器不支持录音功能，请使用Chrome、Edge或Firefox浏览器！');
+                recordBtn.disabled = true;
+            }
+        }
+    </script>
+</body>
+</html>

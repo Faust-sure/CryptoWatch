@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>阿里云语音合成(TTS)测试工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: 600px;
+            padding: 40px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .config-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+        }
+
+        .config-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group:last-child {
+            margin-bottom: 0;
+        }
+
+        label {
+            display: block;
+            color: #555;
+            margin-bottom: 5px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        input[type="text"], input[type="password"], textarea, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e8ed;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus, input[type="password"]:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #f5576c;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+            font-family: inherit;
+        }
+
+        .voice-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .play-section {
+            text-align: center;
+            margin: 30px 0;
+        }
+
+        .play-btn {
+            padding: 15px 40px;
+            border-radius: 50px;
+            border: none;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(245, 87, 108, 0.4);
+        }
+
+        .play-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(245, 87, 108, 0.6);
+        }
+
+        .play-btn:active {
+            transform: translateY(0);
+        }
+
+        .play-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .play-btn.playing {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            animation: pulse-tts 1.5s infinite;
+        }
+
+        @keyframes pulse-tts {
+            0%, 100% { box-shadow: 0 4px 15px rgba(0, 242, 254, 0.4); }
+            50% { box-shadow: 0 4px 30px rgba(0, 242, 254, 0.8); }
+        }
+
+        .status-section {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #e1e8ed;
+        }
+
+        .status-item:last-child {
+            border-bottom: none;
+        }
+
+        .status-label {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .status-value {
+            color: #333;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .audio-player {
+            margin-top: 20px;
+            width: 100%;
+        }
+
+        .log-section {
+            margin-top: 20px;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .log-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .log-item {
+            font-size: 12px;
+            color: #666;
+            padding: 5px 0;
+            border-bottom: 1px solid #e1e8ed;
+            font-family: 'Courier New', monospace;
+        }
+
+        .log-item:last-child {
+            border-bottom: none;
+        }
+
+        .log-item.error {
+            color: #dc3545;
+        }
+
+        .log-item.success {
+            color: #28a745;
+        }
+
+        .help-text {
+            background: #d1ecf1;
+            border: 1px solid #17a2b8;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            font-size: 13px;
+            color: #0c5460;
+        }
+
+        .help-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .help-list {
+            margin-left: 20px;
+        }
+
+        .preset-texts {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .preset-btn {
+            padding: 8px 12px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        .preset-btn:hover {
+            background: #e9ecef;
+            border-color: #adb5bd;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔊 语音合成测试</h1>
+        <p class="subtitle">阿里云智能语音交互 - TTS文字转语音</p>
+
+        <!-- 配置区域 -->
+        <div class="config-section">
+            <div class="config-title">⚙️ API配置</div>
+            <div class="input-group">
+                <label for="token">AccessToken（24小时有效）:</label>
+                <input type="password" id="token" placeholder="在阿里云控制台获取">
+            </div>
+            <div class="input-group">
+                <label for="appkey">AppKey:</label>
+                <input type="text" id="appkey" value="">
+            </div>
+        </div>
+
+        <!-- 语音参数 -->
+        <div class="config-section">
+            <div class="config-title">🎵 语音参数</div>
+            <div class="voice-options">
+                <div class="input-group">
+                    <label for="voice">发音人:</label>
+                    <select id="voice">
+                        <option value="xiaoyun">小云（女声）</option>
+                        <option value="xiaogang">小刚（男声）</option>
+                        <option value="ruoxi">若希（女声）</option>
+                        <option value="siqi">思琪（女声）</option>
+                        <option value="sijia">思佳（女声）</option>
+                        <option value="sicheng">思诚（男声）</option>
+                        <option value="aiqi">艾琪（女声）</option>
+                        <option value="aijia">艾佳（女声）</option>
+                        <option value="aicheng">艾诚（男声）</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="format">音频格式:</label>
+                    <select id="format">
+                        <option value="mp3">MP3</option>
+                        <option value="wav">WAV</option>
+                        <option value="pcm">PCM</option>
+                    </select>
+                </div>
+            </div>
+            <div class="voice-options" style="margin-top: 10px;">
+                <div class="input-group">
+                    <label for="volume">音量 (0-100):</label>
+                    <input type="number" id="volume" value="50" min="0" max="100">
+                </div>
+                <div class="input-group">
+                    <label for="speech-rate">语速 (-500到500):</label>
+                    <input type="number" id="speech-rate" value="0" min="-500" max="500">
+                </div>
+            </div>
+        </div>
+
+        <!-- 文本输入 -->
+        <div class="config-section">
+            <div class="config-title">📝 输入文本</div>
+            <div class="input-group">
+                <textarea id="text-input" placeholder="请输入要转换为语音的文本...">你好，我是智能语音助手。今天天气不错，适合出门散步。</textarea>
+            </div>
+            <div class="preset-texts">
+                <button class="preset-btn" onclick="setText('你好，欢迎使用阿里云语音合成服务。')">示例1</button>
+                <button class="preset-btn" onclick="setText('今天是2026年1月13日，天气晴朗。')">示例2</button>
+                <button class="preset-btn" onclick="setText('Hello, this is a test of bilingual speech synthesis.')">示例3（双语）</button>
+                <button class="preset-btn" onclick="setText('语音合成技术让计算机能够说话，就像真人一样自然流畅。')">示例4</button>
+            </div>
+        </div>
+
+        <!-- 播放按钮 -->
+        <div class="play-section">
+            <button class="play-btn" id="play-btn" onclick="synthesizeSpeech()">
+                🔊 开始合成并播放
+            </button>
+        </div>
+
+        <!-- 状态显示 -->
+        <div class="status-section">
+            <div class="status-item">
+                <span class="status-label">合成状态:</span>
+                <span class="status-value" id="synthesis-status">未开始</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">音频大小:</span>
+                <span class="status-value" id="audio-size">-</span>
+            </div>
+        </div>
+
+        <!-- 音频播放器 -->
+        <audio id="audio-player" class="audio-player" controls style="display:none;"></audio>
+
+        <!-- 日志区域 -->
+        <div class="log-section">
+            <div class="log-title">📋 运行日志</div>
+            <div id="log-container"></div>
+        </div>
+
+        <!-- 帮助信息 -->
+        <div class="help-text">
+            <div class="help-title">📌 使用说明:</div>
+            <ul class="help-list">
+                <li>在阿里云控制台的"智能语音交互 > 项目管理 > 测试"获取Token</li>
+                <li>填入Token，选择发音人和其他参数</li>
+                <li>输入要转换的文本（支持中英文混合）</li>
+                <li>点击"开始合成并播放"按钮</li>
+                <li>等待合成完成后自动播放</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // DOM元素
+        const playBtn = document.getElementById('play-btn');
+        const synthesisStatus = document.getElementById('synthesis-status');
+        const audioSize = document.getElementById('audio-size');
+        const audioPlayer = document.getElementById('audio-player');
+        const logContainer = document.getElementById('log-container');
+
+        // 添加日志
+        function addLog(message, type = 'info') {
+            const logItem = document.createElement('div');
+            logItem.className = `log-item ${type}`;
+            const time = new Date().toLocaleTimeString();
+            logItem.textContent = `[${time}] ${message}`;
+            logContainer.insertBefore(logItem, logContainer.firstChild);
+            
+            // 限制日志数量
+            if (logContainer.children.length > 50) {
+                logContainer.removeChild(logContainer.lastChild);
+            }
+        }
+
+        // 设置预设文本
+        function setText(text) {
+            document.getElementById('text-input').value = text;
+            addLog(`已设置预设文本: ${text.substring(0, 20)}...`, 'info');
+        }
+
+        // 语音合成
+        async function synthesizeSpeech() {
+            const token = document.getElementById('token').value.trim();
+            const appkey = document.getElementById('appkey').value.trim();
+            const text = document.getElementById('text-input').value.trim();
+            const voice = document.getElementById('voice').value;
+            const format = document.getElementById('format').value;
+            const volume = document.getElementById('volume').value;
+            const speechRate = document.getElementById('speech-rate').value;
+
+            // 验证输入
+            if (!token) {
+                alert('请先填入AccessToken！');
+                return;
+            }
+
+            if (!appkey) {
+                alert('请先填入AppKey！');
+                return;
+            }
+
+            if (!text) {
+                alert('请输入要转换的文本！');
+                return;
+            }
+
+            // 禁用按钮
+            playBtn.disabled = true;
+            playBtn.classList.add('playing');
+            synthesisStatus.textContent = '合成中...';
+            addLog('开始语音合成...', 'info');
+
+            try {
+                // 使用服务器代理（避免CORS）
+                const url = '/api/aliyun/tts';
+                
+                // 构建请求参数
+                const params = new URLSearchParams({
+                    appkey: appkey,
+                    token: token,
+                    text: text,
+                    format: format,
+                    voice: voice,
+                    volume: volume,
+                    speech_rate: speechRate,
+                    pitch_rate: 0
+                });
+
+                addLog(`请求URL: ${url}`, 'info');
+                addLog(`参数: 发音人=${voice}, 格式=${format}`, 'info');
+
+                // 发送请求
+                const response = await fetch(`${url}?${params.toString()}`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': `audio/${format}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                // 获取音频数据
+                const audioBlob = await response.blob();
+                const audioUrl = URL.createObjectURL(audioBlob);
+                
+                // 显示音频大小
+                const sizeKB = (audioBlob.size / 1024).toFixed(2);
+                audioSize.textContent = `${sizeKB} KB`;
+                
+                // 播放音频
+                audioPlayer.src = audioUrl;
+                audioPlayer.style.display = 'block';
+                audioPlayer.play();
+
+                synthesisStatus.textContent = '合成成功，正在播放';
+                addLog(`合成成功！音频大小: ${sizeKB} KB`, 'success');
+
+                // 播放结束时的处理
+                audioPlayer.onended = () => {
+                    synthesisStatus.textContent = '播放完成';
+                    playBtn.disabled = false;
+                    playBtn.classList.remove('playing');
+                    addLog('播放完成', 'info');
+                };
+
+            } catch (error) {
+                addLog(`合成失败: ${error.message}`, 'error');
+                synthesisStatus.textContent = '合成失败';
+                alert(`语音合成失败：${error.message}`);
+            } finally {
+                if (!audioPlayer.src) {
+                    playBtn.disabled = false;
+                    playBtn.classList.remove('playing');
+                }
+            }
+        }
+
+        // 页面加载完成
+        async function loadConfigFromServer() {
+            try {
+                const resp = await fetch('/api/aliyun/config', { cache: 'no-store' });
+                if (!resp.ok) {
+                    throw new Error(`HTTP ${resp.status}`);
+                }
+
+                const cfg = await resp.json();
+                if (!cfg || !cfg.success) {
+                    throw new Error(cfg?.error || '返回内容异常');
+                }
+
+                if (cfg.token) {
+                    document.getElementById('token').value = cfg.token;
+                }
+                if (cfg.appKey) {
+                    document.getElementById('appkey').value = cfg.appKey;
+                }
+
+                addLog('已从本地服务器自动加载 Token/AppKey', 'success');
+            } catch (e) {
+                addLog(`自动加载配置失败（可忽略，手动填写即可）：${e.message}`, 'info');
+            }
+        }
+
+        addLog('页面加载完成，正在尝试自动加载配置...', 'info');
+        loadConfigFromServer();
+    </script>
+</body>
+</html>
